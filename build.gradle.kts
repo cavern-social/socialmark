@@ -26,6 +26,10 @@ dependencies {
     antlr("org.antlr:antlr4:4.10.1")
 }
 
+tasks.generateGrammarSource {
+    arguments = arguments + listOf("-package", "org.timmc.socialmark.internal")
+}
+
 tasks.named("compileKotlin") {
     dependsOn(":generateGrammarSource") // Compile ANTLR first
 }

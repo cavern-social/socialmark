@@ -1,9 +1,5 @@
 grammar SMGrammar;
 
-@header {
-    package org.timmc.socialmark.internal;
-}
-
 // Parser rules
 
 document : node* EOF;
@@ -31,7 +27,13 @@ escape : '\\' 'u' unicode_point ';';
 
 // A Unicode code point. Leading zeroes are permitted but not required.
 // Must be lowercase hex, 1-6 characters (inclusive).
-unicode_point : (hex+=LOW_HEX)+ { $hex.size() <= 6 }?;
+unicode_point : LOW_HEX
+              | LOW_HEX LOW_HEX
+              | LOW_HEX LOW_HEX LOW_HEX
+              | LOW_HEX LOW_HEX LOW_HEX LOW_HEX
+              | LOW_HEX LOW_HEX LOW_HEX LOW_HEX LOW_HEX
+              | LOW_HEX LOW_HEX LOW_HEX LOW_HEX LOW_HEX LOW_HEX
+              ;
 
 // Lexer rules
 
