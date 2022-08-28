@@ -33,16 +33,16 @@ tasks.generateGrammarSource {
         // Turn warnings into build-breaking errors
         "-Werror",
     )
-    // For some reason, using separate Parser and Lexer files confuses the antlr
-    // plugin and it starts dropping most of its files into src/main/gen
-    // (except some are apparently duplicated into this generated-src path...)
+    // The ANTLR plugin will generate .java files at a location corresponding to
+    // the .g4 files. It also only looks for .g4 files at the root dir of
+    // `src/main/antlr`. However, I need the Java files to be in a package. So,
+    // there are two options:
+    //
+    // A. Put the grammar files directly in `src/main/antlr` and use an explicit
+    //    `outputDirectory` to drop them into their package hierarchy.
+    // B. Put the grammar files into a package hierarchy and specify the `-lib`
+    //    antlr CLI option to tell it to look in that directory.
     outputDirectory = File(buildDir, "generated-src/antlr/main/org/timmc/socialmark/internal")
-}
-
-sourceSets {
-    main {
-        java.srcDir("$buildDir/generated-src/antlr/main")
-    }
 }
 
 tasks.compileKotlin {
