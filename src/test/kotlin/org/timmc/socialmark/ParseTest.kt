@@ -28,9 +28,7 @@ class ParseTest {
         // Six hex is fine
         assertEquals(TextNode("trade™mark"), Parse.parseMarkup("trade\\u002122;mark").nodes[0])
         // Seven is not
-        assertFails {
-            Parse.parseMarkup("trade\\u0002122;mark")
-        }
+        assertFails { Parse.parseMarkup("trade\\u0002122;mark") }
     }
 
     @Test fun basicNesting() {

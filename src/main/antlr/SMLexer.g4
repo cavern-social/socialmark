@@ -12,7 +12,7 @@ fragment ESCAPE_START : '\\u';
 // A Unicode escape in either text node or attribute value (e.g. `\u2122;`)
 mode ESCAPE;
 
-HEX : [0-9A-F]+;
+HEX : [0-9A-F]; // single character so we can count them
 ESCAPE_END : ';' -> popMode;
 
 
