@@ -28,12 +28,11 @@ dependencies {
 
 tasks.generateGrammarSource {
     arguments = arguments + listOf(
+        // Set a package header on the generated Java files
         "-package", "org.timmc.socialmark.internal",
-        "-lib", "src/main/antlr",
+        // Turn warnings into build-breaking errors
         "-Werror",
     )
-    include("SMParser.g4")
-    include("SMLexer.g4")
     // For some reason, using separate Parser and Lexer files confuses the antlr
     // plugin and it starts dropping most of its files into src/main/gen
     // (except some are apparently duplicated into this generated-src path...)
