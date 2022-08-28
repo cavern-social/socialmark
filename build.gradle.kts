@@ -27,10 +27,26 @@ dependencies {
 }
 
 tasks.generateGrammarSource {
-    arguments = arguments + listOf("-package", "org.timmc.socialmark.internal")
+    arguments = arguments + listOf(
+        "-package", "org.timmc.socialmark.internal",
+        "-lib", "src/main/antlr",
+        "-Werror",
+    )
+    include("SMParser.g4")
+    include("SMLexer.g4")
+    // For some reason, using separate Parser and Lexer files confuses the antlr
+    // plugin and it starts dropping most of its files into src/main/gen
+    // (except some are apparently duplicated into this generated-src path...)
+    outputDirectory = File(buildDir, "generated-src/antlr/main/org/timmc/socialmark/internal")
 }
 
-tasks.named("compileKotlin") {
+sourceSets {
+    main {
+        java.srcDir("$buildDir/generated-src/antlr/main")
+    }
+}
+
+tasks.compileKotlin {
     dependsOn(":generateGrammarSource") // Compile ANTLR first
 }
 
