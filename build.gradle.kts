@@ -8,6 +8,8 @@ plugins {
 
     // https://docs.gradle.org/current/userguide/java_library_plugin.html
     `java-library`
+
+    antlr // Automatically compiles antlr dirs to sources
 }
 
 repositories {
@@ -21,5 +23,9 @@ dependencies {
     testImplementation("org.jetbrains.kotlin:kotlin-test")
     testImplementation("org.jetbrains.kotlin:kotlin-test-junit")
 
-    implementation(project(":parsegen")) // Depend on the compiled ANTLR grammar
+    antlr("org.antlr:antlr4:4.10.1")
+}
+
+tasks.named("compileKotlin") {
+    dependsOn(":generateGrammarSource") // Compile ANTLR first
 }
