@@ -12,7 +12,8 @@ node : text
      | open_tag node* close_tag
      ;
 
-text : TEXT_CHAR_SAFE+;
+text : (text_unescaped | escape)+;
+text_unescaped : TEXT_CHAR_SAFE+;
 
 open_tag : '<' tag_name (WHITESPACE+ attrs+=tag_attr)* WHITESPACE* '>';
 close_tag : '</' tag_name '>';
@@ -38,4 +39,4 @@ LOW_ALPHA : [a-z];
 WHITESPACE : [ \r\t\n];
 ATTR_CHARS_SAFE : [^"\\\r\n];
 LOW_HEX : [0-9a-f];
-TEXT_CHAR_SAFE : [^<];
+TEXT_CHAR_SAFE : [^<\\];
