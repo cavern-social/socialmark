@@ -15,10 +15,10 @@ ESCAPE_END : ';' -> popMode;
 
 mode TAG;
 
-IS_CLOSING_TAG : '/';
+CLOSE : '/';
 NAME : [a-z]+; // name of tag or attribute
 TAG_END : '>' -> popMode;
-WHITESPACE : [ \r\t\n];
+WS : [ \r\t\n];
 ATTR_VAL_START : '="' -> pushMode(ATTR_VAL);
 
 mode ATTR_VAL;

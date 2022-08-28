@@ -7,7 +7,8 @@ import org.timmc.socialmark.internal.SMLexer
 import org.timmc.socialmark.internal.SMParser
 import org.timmc.socialmark.internal.SMParser.AttrValEscapeContext
 import org.timmc.socialmark.internal.SMParser.AttrValRawContext
-import org.timmc.socialmark.internal.SMParser.ElementNodeContext
+import org.timmc.socialmark.internal.SMParser.PairedElementContext
+import org.timmc.socialmark.internal.SMParser.SelfClosingElementContext
 import org.timmc.socialmark.internal.SMParser.Tag_attrContext
 import org.timmc.socialmark.internal.SMParser.TextEscapeContext
 import org.timmc.socialmark.internal.SMParser.TextNodeContext
@@ -34,12 +35,12 @@ data class Document(
 }
 
 sealed interface Node {
-    data class TextNode(
+    data class Text(
         val text: String,
     ) : Node {
         companion object {
-            fun from(ctx: TextNodeContext): TextNode {
-                return TextNode(ctx.text_pieces.joinToString("") { piece ->
+            fun from(ctx: TextNodeContext): Text {
+                return Text(ctx.text_pieces.joinToString("") { piece ->
                     when (piece) {
                         is TextRawContext -> piece.text
                         is TextEscapeContext -> parseEscape(piece.unicode_point())
@@ -50,17 +51,33 @@ sealed interface Node {
         }
     }
 
-    class ElNode(
+    data class Paired(
         val name: String,
-        val attrs: List<Attribute>,
+        val attrs: List<Attr>, // TODO Turn into map; validate no repeated keys
         val children: List<Node>,
     ): Node {
         companion object {
-            fun from(nodeCtx: ElementNodeContext): ElNode {
-                val tagName = nodeCtx.open_tag().tag_name().text
-                val attrs = nodeCtx.open_tag().attrs.map(Attribute::from)
+            fun from(nodeCtx: PairedElementContext): Paired {
+                val tagName = nodeCtx.tag_props().tag_name().text
+                val attrs = nodeCtx.tag_props().attrs.map(Attr::from)
                 val children = nodeCtx.inner_nodes.map(Node::from)
-                return ElNode(name=tagName, attrs=attrs, children=children)
+                if (nodeCtx.closing_name.text != tagName) {
+                    throw Exception("Mismatched start and end tags (or nesting error)")
+                }
+                return Paired(name=tagName, attrs=attrs, children=children)
+            }
+        }
+    }
+
+    data class SelfClose(
+        val name: String,
+        val attrs: List<Attr>,
+    ): Node {
+        companion object {
+            fun from(nodeCtx: SelfClosingElementContext): SelfClose {
+                val tagName = nodeCtx.tag_props().tag_name().text
+                val attrs = nodeCtx.tag_props().attrs.map(Attr::from)
+                return SelfClose(name=tagName, attrs=attrs)
             }
         }
     }
@@ -68,8 +85,9 @@ sealed interface Node {
     companion object {
         fun from(nodeCtx: SMParser.NodeContext): Node {
             return when (nodeCtx) {
-                is TextNodeContext -> TextNode.from(nodeCtx)
-                is ElementNodeContext -> ElNode.from(nodeCtx)
+                is TextNodeContext -> Text.from(nodeCtx)
+                is PairedElementContext -> Paired.from(nodeCtx)
+                is SelfClosingElementContext -> SelfClose.from(nodeCtx)
                 else -> throw Exception("Unexpected node type: ${nodeCtx.javaClass}")
             }
         }
@@ -80,13 +98,13 @@ fun parseEscape(codepoint: Unicode_pointContext): String {
     return Character.toString(Integer.parseInt(codepoint.text, 16))
 }
 
-data class Attribute(
+data class Attr(
     val name: String,
     val value: String,
 ) {
     companion object {
-        fun from(ctx: Tag_attrContext): Attribute {
-            return Attribute(
+        fun from(ctx: Tag_attrContext): Attr {
+            return Attr(
                 name=ctx.attr_name().text,
                 value=ctx.attr_value().attr_value_pieces.map { piece ->
                     when (piece) {

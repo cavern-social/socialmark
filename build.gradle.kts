@@ -51,6 +51,12 @@ tasks.compileKotlin {
     dependsOn(":generateGrammarSource") // Compile ANTLR first
 }
 
+tasks.compileTestKotlin {
+    // This isn't currently used, but specifying it keeps Gradle from warning
+    // about the undeclared dependency.
+    dependsOn(":generateTestGrammarSource")
+}
+
 java {
     toolchain {
         languageVersion.set(JavaLanguageVersion.of(11))
