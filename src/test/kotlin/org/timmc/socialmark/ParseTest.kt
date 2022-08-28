@@ -62,9 +62,15 @@ class ParseTest {
         assertEquals(expected, doc)
     }
 
-    @Test fun mismatched() {
+    @Test fun mismatchedPairs() {
         assertFails {
-            Parse.parseMarkup("<foo>bar</baz>")
+            Parse.parseMarkup("<foo> <bar> </foo> </bar>")
+        }
+    }
+
+    @Test fun duplicateAttrs() {
+        assertFails {
+            Parse.parseMarkup("""<foo bar="1" bar="2">stuff</foo>""")
         }
     }
 }
