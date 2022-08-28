@@ -4,7 +4,7 @@
  */
 
 plugins {
-    id("org.jetbrains.kotlin.jvm") version "1.6.21" // Kotlin support
+    id("org.jetbrains.kotlin.jvm") version "1.7.10" // Kotlin support
 
     // https://docs.gradle.org/current/userguide/java_library_plugin.html
     `java-library`
