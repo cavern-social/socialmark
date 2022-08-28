@@ -5,6 +5,7 @@ import kotlin.test.assertEquals
 import kotlin.test.assertFails
 
 class ParseTest {
+    /** An empty document has zero nodes -- not a single empty text node. */
     @Test fun empty() {
         assertEquals(0, Parse.parseMarkup("").nodes.size)
     }
@@ -12,35 +13,43 @@ class ParseTest {
     @Test fun justText() {
         mapOf(
             "simple" to Parse.parseMarkup("Hello, world!"),
-            "escape" to Parse.parseMarkup("Hello,\\u20;world!"),
+            "start-escape" to Parse.parseMarkup("\\u000048;ello, world!"),
+            "mid-escape" to Parse.parseMarkup("Hello,\\u20;world!"),
+            "end-escape" to Parse.parseMarkup("Hello, world\\u0021;"),
         ).map { (which, doc) ->
             assertEquals(
-                Document(listOf(Node.Text("Hello, world!"))), doc,
+                Document(listOf(TextNode("Hello, world!"))), doc,
                 "Assertion failed for '$which'"
             )
         }
     }
 
+    @Test fun invalidTextEscape() {
+        // Six hex is fine
+        assertEquals(TextNode("trade™mark"), Parse.parseMarkup("trade\\u002122;mark").nodes[0])
+        // Seven is not
+        assertFails {
+            Parse.parseMarkup("trade\\u0002122;mark")
+        }
+    }
+
     @Test fun basicNesting() {
         val expected = Document(listOf(
-            Node.Paired("blockquote", emptyList(), listOf(
-                Node.Text("\n  "),
-                Node.Paired("cite", emptyList(), listOf(
-                    Node.Paired(
+            PairedEl("blockquote", children = listOf(
+                TextNode("\n  "),
+                PairedEl("cite", children = listOf(
+                    PairedEl(
                         "link",
-                        listOf(Attr("url", "https://einstein.example.com")),
+                        mapOf("url" to "https://einstein.example.com"),
                         listOf(
-                            Node.Text("Not Einstein"),
+                            TextNode("Not Einstein"),
                         )
                     ),
                 )),
-                Node.Text("\n  Wow, this relativity stuff is hard!\n"),
+                TextNode("\n  Wow, this relativity stuff is hard!\n"),
             )),
-            Node.Text("\nHere's a photo of a star:\n"),
-            Node.SelfClose(
-                "embed",
-                listOf(Attr("file", "attach:star.jpg"))
-            ),
+            TextNode("\nHere's a photo of a star:\n"),
+            SelfClosingEl("embed", mapOf("file" to "attach:star.jpg")),
         ))
 
         val doc = Parse.parseMarkup("""
