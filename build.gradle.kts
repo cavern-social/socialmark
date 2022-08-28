@@ -29,3 +29,15 @@ dependencies {
 tasks.named("compileKotlin") {
     dependsOn(":generateGrammarSource") // Compile ANTLR first
 }
+
+java {
+    toolchain {
+        languageVersion.set(JavaLanguageVersion.of(11))
+    }
+}
+
+kotlin {
+    jvmToolchain {
+        (this as JavaToolchainSpec).languageVersion.set(JavaLanguageVersion.of(11))
+    }
+}
