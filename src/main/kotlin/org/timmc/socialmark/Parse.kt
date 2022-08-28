@@ -106,13 +106,13 @@ data class Attr(
         fun from(ctx: Tag_attrContext): Attr {
             return Attr(
                 name=ctx.attr_name().text,
-                value=ctx.attr_value().attr_value_pieces.map { piece ->
+                value=ctx.attr_value().attr_value_pieces.joinToString("") { piece ->
                     when (piece) {
                         is AttrValRawContext -> piece.text
                         is AttrValEscapeContext -> parseEscape(piece.unicode_point())
                         else -> throw Exception("Unexpected attr value type: ${piece.javaClass}")
                     }
-                }.joinToString("")
+                }
             )
         }
     }
