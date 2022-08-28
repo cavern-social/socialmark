@@ -41,7 +41,9 @@ tasks.generateGrammarSource {
     // A. Put the grammar files directly in `src/main/antlr` and use an explicit
     //    `outputDirectory` to drop them into their package hierarchy.
     // B. Put the grammar files into a package hierarchy and specify the `-lib`
-    //    antlr CLI option to tell it to look in that directory.
+    //    antlr CLI option to tell it to look in that directory. And...
+    //    something else, because then ANTLR gets confused about how to find the
+    //    tokens.
     outputDirectory = File(buildDir, "generated-src/antlr/main/org/timmc/socialmark/internal")
 }
 
