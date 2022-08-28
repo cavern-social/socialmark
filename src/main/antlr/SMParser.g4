@@ -2,13 +2,14 @@ parser grammar SMParser;
 
 options { tokenVocab=SMLexer; }
 
-document : node* EOF;
+document : (nodes+=node)* EOF;
 
 node : text
      | open_tag node* close_tag
      ;
 
-text : (text_unescaped | text_escape)+;
+text : (text_pieces+=text_piece)+;
+text_piece : text_unescaped | text_escape;
 text_unescaped : TEXT_RAW;
 text_escape : TEXT_ESCAPE_START unicode_point ESCAPE_END;
 
@@ -18,7 +19,10 @@ tag_name : NAME;
 
 tag_attr : attr_name ATTR_VAL_START attr_value ATTR_VAL_END;
 attr_name : NAME;
-attr_value : (attr_unescaped | attr_escape)*;
+attr_value : (attr_value_pieces+=attr_value_piece)*;
+attr_value_piece : attr_unescaped
+                 | attr_escape
+                 ;
 
 attr_unescaped : ATTR_RAW;
 attr_escape : ATTR_ESCAPE_START unicode_point ESCAPE_END;
