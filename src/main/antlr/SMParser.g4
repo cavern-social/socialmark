@@ -10,7 +10,7 @@ node : (text_pieces+=text_piece)+ # TextNode
      ;
 
 text_piece : TEXT_RAW # TextRaw
-           | TEXT_ESCAPE_START unicode_point ESCAPE_END # TextEscape
+           | TEXT_ESC_START unicode_point ESCAPE_END # TextEscape
            ;
 
 tag_props : tag_name (WS+ attrs+=tag_attr)*;
@@ -20,7 +20,7 @@ tag_attr : attr_name ATTR_VAL_START attr_value ATTR_VAL_END;
 attr_name : NAME;
 attr_value : (attr_value_pieces+=attr_value_piece)*;
 attr_value_piece : ATTR_RAW # AttrValRaw
-                 | ATTR_ESCAPE_START unicode_point ESCAPE_END # AttrValEscape
+                 | ATTR_ESC_START unicode_point ESCAPE_END # AttrValEscape
                  ;
 
 // A Unicode code point. Leading zeroes are permitted but not required.
