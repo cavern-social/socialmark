@@ -24,5 +24,13 @@ attr_value_piece : ATTR_RAW # AttrValRaw
                  ;
 
 // A Unicode code point. Leading zeroes are permitted but not required.
-// Must be lowercase hex, 1-6 characters (inclusive).
-unicode_point : HEX;
+// Must be lowercase hex, 1-6 characters (inclusive). Explicit repetition
+// is used here to avoid having to write a semantic predicate (which is not
+// portable).
+unicode_point : HEX
+              | HEX HEX
+              | HEX HEX HEX
+              | HEX HEX HEX HEX
+              | HEX HEX HEX HEX HEX
+              | HEX HEX HEX HEX HEX HEX
+              ;

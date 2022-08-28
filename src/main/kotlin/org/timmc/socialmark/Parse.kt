@@ -77,12 +77,7 @@ sealed interface Node {
 }
 
 fun parseEscape(codepoint: Unicode_pointContext): String {
-    val hex = codepoint.text
-    if (hex.length > 6) {
-        throw Exception("Unicode escape sequence capped at 6 hex characters, was ${hex.length}")
-    } else {
-        return Character.toString(Integer.parseInt(hex, 16))
-    }
+    return Character.toString(Integer.parseInt(codepoint.text, 16))
 }
 
 data class Attribute(
