@@ -14,6 +14,7 @@ import org.timmc.socialmark.internal.SMParser.TextEscapeContext
 import org.timmc.socialmark.internal.SMParser.TextNodeContext
 import org.timmc.socialmark.internal.SMParser.TextRawContext
 import org.timmc.socialmark.internal.SMParser.Unicode_pointContext
+import kotlin.text.StringBuilder
 
 object Parse {
     /**
@@ -36,6 +37,10 @@ object Parse {
 data class Document(
     val nodes: List<Node>
 ) {
+    fun format(): String {
+        return nodes.joinToString("") { it.format() }
+    }
+
     companion object {
         fun from(ctx: SMParser.DocumentContext): Document {
             return Document(ctx.nodes.map(Node::from))
@@ -50,6 +55,8 @@ data class Document(
  * [SelfClosingEl]).
  */
 sealed interface Node {
+    fun format(): String
+
     companion object {
         fun from(nodeCtx: SMParser.NodeContext): Node {
             return when (nodeCtx) {
@@ -69,7 +76,13 @@ data class TextNode(
     /** Contents of the node. Should be non-empty. */
     val text: String,
 ) : Node {
+    override fun format(): String {
+        return escapeFor(unsafeTextChars, text)
+    }
+
     companion object {
+        private val unsafeTextChars = setOf('<', '\\')
+
         fun from(ctx: TextNodeContext): TextNode {
             return TextNode(ctx.text_pieces.joinToString("") { piece ->
                 when (piece) {
@@ -90,10 +103,17 @@ data class PairedEl(
     val attrs: Map<String, String> = emptyMap(),
     val children: List<Node> = emptyList(),
 ): Node {
+    // TODO validate name and attrs in constructor?
+
+    override fun format(): String {
+        val inner = children.joinToString("") { it.format() }
+        return "<$name${Attrs.format(attrs)}>$inner</$name>"
+    }
+
     companion object {
         fun from(nodeCtx: PairedElementContext): PairedEl {
             val tagName = parseElementName(nodeCtx.tag_props())
-            val attrs = parseElementAttrs(nodeCtx.tag_props())
+            val attrs = Attrs.from(nodeCtx.tag_props())
             val children = nodeCtx.inner_nodes.map(Node::from)
 
             if (tagName != nodeCtx.closing_name.text) {
@@ -112,10 +132,15 @@ data class SelfClosingEl(
     val name: String,
     val attrs: Map<String, String> = emptyMap(),
 ): Node {
+    override fun format(): String {
+        return "<$name${Attrs.format(attrs)}/>"
+
+    }
+
     companion object {
         fun from(nodeCtx: SelfClosingElementContext): SelfClosingEl {
             val tagName = parseElementName(nodeCtx.tag_props())
-            val attrs = parseElementAttrs(nodeCtx.tag_props())
+            val attrs = Attrs.from(nodeCtx.tag_props())
             return SelfClosingEl(name=tagName, attrs=attrs)
         }
     }
@@ -125,29 +150,59 @@ internal fun parseEscape(codepoint: Unicode_pointContext): String {
     return Character.toString(Integer.parseInt(codepoint.text, 16))
 }
 
+/**
+ * Escape unsafe characters with `\u3C;` escapes.
+ *
+ * @param [unsafeChars] Set of ASCII characters that must be escaped.
+ */
+internal fun escapeFor(unsafeChars: Set<Char>, text: String): String {
+    val unsafeCodepoints = unsafeChars.map { it.code }
+    val ret = StringBuilder()
+    // There's probably a more efficient way to do this...
+    text.codePoints().forEach { cp ->
+        if (unsafeCodepoints.contains(cp)) {
+            ret.append("\\u")
+            ret.append(Integer.toHexString(cp))
+            ret.append(';')
+        } else {
+            ret.append(Character.toString(cp))
+        }
+    }
+    return ret.toString()
+}
+
 internal fun parseElementName(ctx: Tag_propsContext): String {
     return ctx.tag_name().text
 }
 
-internal fun parseElementAttrs(ctx: Tag_propsContext): Map<String, String> {
-    val pairs = ctx.attrs.map { attrCtx ->
-        val name = attrCtx.attr_name().text
-        val value = attrCtx.attr_value().attr_value_pieces.joinToString("") { piece ->
-            when (piece) {
-                is AttrValRawContext -> piece.text
-                is AttrValEscapeContext -> parseEscape(piece.unicode_point())
-                else -> throw Exception("Unexpected attr value type: ${piece.javaClass}")
+internal object Attrs {
+    fun from(ctx: Tag_propsContext): Map<String, String> {
+        val pairs = ctx.attrs.map { attrCtx ->
+            val name = attrCtx.attr_name().text
+            val value = attrCtx.attr_value().attr_value_pieces.joinToString("") { piece ->
+                when (piece) {
+                    is AttrValRawContext -> piece.text
+                    is AttrValEscapeContext -> parseEscape(piece.unicode_point())
+                    else -> throw Exception("Unexpected attr value type: ${piece.javaClass}")
+                }
             }
+            name to value
         }
-        name to value
+
+        val names = pairs.map { it.first }
+        if (names.hasDuplicates()) {
+            throw Exception("Element had multiple attributes with same name")
+        }
+
+        return pairs.toMap()
     }
 
-    val names = pairs.map { it.first }
-    if (names.hasDuplicates()) {
-        throw Exception("Element had multiple attributes with same name")
-    }
+    val unsafeAttrChars = setOf('"', '\\', '\r', '\n')
 
-    return pairs.toMap()
+    fun format(attrs: Map<String, String>): String {
+        return attrs.map { (k, v) -> " $k=\"${escapeFor(unsafeAttrChars, v)}\"" }
+            .joinToString("")
+    }
 }
 
 fun List<*>.hasDuplicates(): Boolean {
