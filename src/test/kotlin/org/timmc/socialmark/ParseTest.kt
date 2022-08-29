@@ -73,4 +73,9 @@ class ParseTest {
             Parse.parseMarkup("""<foo bar="1" bar="2">stuff</foo>""")
         }
     }
+
+    @Test fun allowedWhitespace() {
+        Parse.parseMarkup("<foo  \r \n  \t bar=\"baz\" \r \n \t />")
+        Parse.parseMarkup("<foo  \r \n  \t bar=\"baz\" \r \n \t ></foo \r \t \n >")
+    }
 }
