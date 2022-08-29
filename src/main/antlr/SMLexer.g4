@@ -2,7 +2,7 @@ lexer grammar SMLexer;
 
 // Default mode: Be ready for text, text escapes, or a tag
 
-TEXT_RAW : ~( '<' | '\\' )+;
+TEXT_RAW : ~( '<' | '\\' )+; // TODO Add > to forbidden chars, and allow \r\n in attrs?
 TEXT_ESC_START : ESCAPE_START -> pushMode(ESCAPE);
 TAG_START : '<' -> pushMode(TAG);
 

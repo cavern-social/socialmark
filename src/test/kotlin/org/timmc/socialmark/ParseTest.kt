@@ -25,6 +25,9 @@ class ParseTest {
     }
 
     @Test fun invalidTextEscape() {
+        // Slash must be followed by 'u'
+        assertFails { Parse.parseMarkup("trade\\x2122;mark") }
+
         // Six hex is fine
         assertEquals(TextNode("trade™mark"), Parse.parseMarkup("trade\\u002122;mark").nodes[0])
         // Seven is not
