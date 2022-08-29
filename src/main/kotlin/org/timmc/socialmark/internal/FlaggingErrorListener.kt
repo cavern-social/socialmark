@@ -32,8 +32,8 @@ class FlaggingErrorListener : ANTLRErrorListener {
         recognizer: Parser?, dfa: DFA, startIndex: Int, stopIndex: Int,
         exact: Boolean, ambigAlts: BitSet?, configs: ATNConfigSet?
     ) {
-        if (error == null)
-            error = "Ambiguous parse between $startIndex and $stopIndex"
+        // Do nothing: Ambiguities are handled by ANTLR. They should be removed
+        // from the grammar if possible, but are not a runtime error.
     }
 
     override fun reportContextSensitivity(
