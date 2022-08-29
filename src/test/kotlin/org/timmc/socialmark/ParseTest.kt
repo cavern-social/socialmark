@@ -31,6 +31,23 @@ class ParseTest {
         assertFails { Parse.parseMarkup("trade\\u0002122;mark") }
     }
 
+    @Test fun escapesUpperAndLower() {
+        // Uppercase is allowed
+        assertEquals(TextNode("<3"), Parse.parseMarkup("\\u3C;3").nodes[0])
+        // Lowercase is not
+        assertFails { Parse.parseMarkup("\\u3c;3") }
+    }
+
+    @Test fun escapesInAttrs() {
+        val node = Parse.parseMarkup("<foo bar=\"\\u22;\"/>").nodes[0] as SelfClosingEl
+        assertEquals("\"", node.attrs["bar"])
+
+        // Newline not allowed in there
+        assertFails {
+            Parse.parseMarkup("<foo bar=\"\n\"/>")
+        }
+    }
+
     @Test fun basicNesting() {
         val expected = Document(listOf(
             PairedEl("blockquote", children = listOf(
