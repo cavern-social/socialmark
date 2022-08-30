@@ -1,6 +1,7 @@
 package org.timmc.socialmark
 
 import kotlin.test.Test
+import kotlin.test.assertContains
 import kotlin.test.assertEquals
 import kotlin.test.assertFails
 
@@ -97,5 +98,12 @@ class ParseTest {
     @Test fun allowedWhitespace() {
         Parse.parseMarkup("<foo  \r \n  \t bar=\"baz\" \r \n \t />")
         Parse.parseMarkup("<foo  \r \n  \t bar=\"baz\" \r \n \t ></foo \r \t \n >")
+    }
+
+    @Test fun earlyEOF() {
+        val e = assertFails {
+            Parse.parseMarkup("<foo")
+        }
+        assertContains(e.message!!, "Error on line 1 at position 4: no viable alternative")
     }
 }

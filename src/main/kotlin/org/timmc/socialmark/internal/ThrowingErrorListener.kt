@@ -9,16 +9,11 @@ import org.antlr.v4.runtime.dfa.DFA
 
 import java.util.BitSet
 
-/** Error listener that just records whether errors have occurred.  */
-class FlaggingErrorListener : ANTLRErrorListener {
-    /** Contains an error message if an error has been encountered, else null. */
-    var error: String? = null
-        private set
-
+/** Actually throw an exception on syntax errors. */
+class ThrowingErrorListener : ANTLRErrorListener {
     override fun syntaxError(recognizer: Recognizer<*, *>?, offendingSymbol: Any?,
                              line: Int, charPositionInLine: Int, msg: String?, e: RecognitionException?) {
-        if (error == null)
-            error = "Error on line $line at position $charPositionInLine: $msg"
+        throw Exception("Error on line $line at position $charPositionInLine: $msg (cause: $e)")
     }
 
     override fun reportAttemptingFullContext(

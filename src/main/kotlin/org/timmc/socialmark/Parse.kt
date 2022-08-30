@@ -3,7 +3,7 @@ package org.timmc.socialmark
 import org.antlr.v4.runtime.BailErrorStrategy
 import org.antlr.v4.runtime.CharStreams
 import org.antlr.v4.runtime.CommonTokenStream
-import org.timmc.socialmark.internal.FlaggingErrorListener
+import org.timmc.socialmark.internal.ThrowingErrorListener
 import org.timmc.socialmark.internal.SMLexer
 import org.timmc.socialmark.internal.SMParser
 import org.timmc.socialmark.internal.SMParser.AttrValEscapeContext
@@ -26,9 +26,9 @@ object Parse {
     fun parseMarkup(sml: String): Document {
         val lexer = SMLexer(CharStreams.fromString(sml))
         // Remove the one that prints unrecognized characters to the console,
-        // and add one that will actually track errors. (It's weird that the
+        // and add one that will actually throw on error. (It's weird that the
         // default behavior is to just log errors and not halt the parse...)
-        val errors = FlaggingErrorListener()
+        val errors = ThrowingErrorListener()
         lexer.removeErrorListeners()
         lexer.addErrorListener(errors)
 
@@ -37,14 +37,7 @@ object Parse {
         parser.addErrorListener(errors)
         parser.errorHandler = BailErrorStrategy()
 
-        val doc = Document.from(parser.document()) // includes EOF
-
-        // OK but was the parse actually valid?
-        if (errors.error == null) {
-            return doc
-        } else {
-            throw Exception("Parsing failed: ${errors.error}")
-        }
+        return Document.from(parser.document()) // includes EOF
     }
 }
 
