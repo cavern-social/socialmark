@@ -4,13 +4,14 @@ options { tokenVocab=SMLexer; }
 
 document : (nodes+=node)* EOF;
 
-// It's tempting to have TextNode be (text_pieces+=text_piece)+ but that results
-// in ambiguity later in the parse tree -- for some reason during the escapes
-// parsing. Something to do with document being a node+ and node being a
-// text_piece+.
+// It's tempting to have an intermediate rule representing a run of text pieces
+// (raw-text runs and individual escapes) but that results in ambiguity later in
+// the parse tree -- for some reason during the escapes parsing. Something to do
+// with `document` being a `node+` and `node` being a `text_piece+`.
 //
 // So the two types of text pieces are just top-level nodes at the grammar level
-// but will be caolesced into a single text node in the final tree.
+// but will be caolesced into a single text node in the final tree during
+// translation.
 node : TEXT_RAW # TextRaw
      | TEXT_ESC_START unicode_point ESCAPE_END # TextEscape
 
