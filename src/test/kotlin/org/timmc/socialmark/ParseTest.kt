@@ -64,7 +64,7 @@ class ParseTest {
                         )
                     ),
                 )),
-                TextNode("\n  Wow, this relativity stuff is hard!\n"),
+                TextNode("\n  Wow, this <relativity> stuff is hard!\n"),
             )),
             TextNode("\nHere's a photo of a star:\n"),
             SelfClosingEl("embed", mapOf("file" to "attach:star.jpg")),
@@ -73,7 +73,7 @@ class ParseTest {
         val doc = Parse.parseMarkup("""
             <blockquote>
               <cite><link url="https://einstein.example.com">Not Einstein</link></cite>
-              Wow, this relativity stuff is hard!
+              Wow, this \u3C;relativity\u3E; stuff is hard!
             </blockquote>
             Here's a photo of a star:
             <embed file="attach:star.jpg"/>

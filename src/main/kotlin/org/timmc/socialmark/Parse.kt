@@ -12,7 +12,6 @@ import org.timmc.socialmark.internal.SMParser.PairedElementContext
 import org.timmc.socialmark.internal.SMParser.SelfClosingElementContext
 import org.timmc.socialmark.internal.SMParser.Tag_propsContext
 import org.timmc.socialmark.internal.SMParser.TextEscapeContext
-import org.timmc.socialmark.internal.SMParser.TextNodeContext
 import org.timmc.socialmark.internal.SMParser.TextRawContext
 import org.timmc.socialmark.internal.SMParser.Unicode_pointContext
 import kotlin.text.StringBuilder
@@ -61,9 +60,31 @@ data class Document(
 
     companion object {
         internal fun from(ctx: SMParser.DocumentContext): Document {
-            return Document(ctx.nodes.map(Node::from))
+            return Document(Node.listFrom(ctx.nodes))
         }
     }
+}
+
+fun <T, C> List<T>.chunkBy(classifier: (T) -> C): List<List<T>> {
+    val chunks = mutableListOf<List<T>>()
+    var lastChunk = mutableListOf<T>()
+    var lastClass: C? = null
+
+    for (next in this) {
+        val nextClass = classifier(next)
+        if (lastClass == null || nextClass == lastClass) {
+            lastChunk.add(next)
+        } else {
+            chunks.add(lastChunk.toList())
+            lastChunk = mutableListOf(next)
+        }
+        lastClass = nextClass
+    }
+
+    if (lastChunk.isNotEmpty())
+        chunks.add(lastChunk)
+
+    return chunks.toList()
 }
 
 /**
@@ -76,13 +97,35 @@ sealed interface Node {
     fun format(): String
 
     companion object {
-        internal fun from(nodeCtx: SMParser.NodeContext): Node {
+        internal fun listFrom(nodelistCtx: List<SMParser.NodeContext>): List<Node> {
+            return coalesceTextNodes(nodelistCtx.map(::from))
+        }
+
+        private fun from(nodeCtx: SMParser.NodeContext): Node {
             return when (nodeCtx) {
-                is TextNodeContext -> TextNode.from(nodeCtx)
+                is TextRawContext -> TextNode.from(nodeCtx)
+                is TextEscapeContext -> TextNode.from(nodeCtx)
                 is PairedElementContext -> PairedEl.from(nodeCtx)
                 is SelfClosingElementContext -> SelfClosingEl.from(nodeCtx)
                 else -> throw Exception("Unexpected node type: ${nodeCtx.javaClass}")
             }
+        }
+
+        private fun coalesceTextNodes(nodes: List<Node>): List<Node> {
+            return nodes
+                .chunkBy { it is TextNode }
+                .flatMap { group ->
+                    if (group[0] is TextNode) {
+                        @Suppress("UNCHECKED_CAST")
+                        val textGroup = group as List<TextNode>
+                        val contents = textGroup
+                            .map(TextNode::text)
+                            .joinToString("")
+                        listOf(TextNode(contents))
+                    } else {
+                        group
+                    }
+                }
         }
     }
 }
@@ -101,14 +144,12 @@ data class TextNode(
     companion object {
         private val unsafeTextChars = setOf('<', '\\')
 
-        internal fun from(ctx: TextNodeContext): TextNode {
-            return TextNode(ctx.text_pieces.joinToString("") { piece ->
-                when (piece) {
-                    is TextRawContext -> piece.text
-                    is TextEscapeContext -> parseEscape(piece.unicode_point())
-                    else -> throw Exception("Unexpected text type: ${piece.javaClass}")
-                }
-            })
+        internal fun from(rawCtx: TextRawContext): TextNode {
+            return TextNode(rawCtx.text)
+        }
+
+        internal fun from(escapeCtx: TextEscapeContext): TextNode {
+            return TextNode(parseEscape(escapeCtx.unicode_point()))
         }
     }
 }
@@ -132,7 +173,7 @@ data class PairedEl(
         internal fun from(nodeCtx: PairedElementContext): PairedEl {
             val tagName = parseElementName(nodeCtx.tag_props())
             val attrs = Attrs.from(nodeCtx.tag_props())
-            val children = nodeCtx.inner_nodes.map(Node::from)
+            val children = Node.listFrom(nodeCtx.inner_nodes)
 
             if (tagName != nodeCtx.closing_name.text) {
                 throw Exception("Mismatched start and end tags (or nesting error)")

@@ -4,7 +4,15 @@ options { tokenVocab=SMLexer; }
 
 document : (nodes+=node)* EOF;
 
-node : (text_pieces+=text_piece)+ # TextNode
+// It's tempting to have TextNode be (text_pieces+=text_piece)+ but that results
+// in ambiguity later in the parse tree -- for some reason during the escapes
+// parsing. Something to do with document being a node+ and node being a
+// text_piece+.
+//
+// So the two types of text pieces are just top-level nodes at the grammar level
+// but will be caolesced into a single text node in the final tree.
+node : TEXT_RAW # TextRaw
+     | TEXT_ESC_START unicode_point ESCAPE_END # TextEscape
 
      | TAG_START tag_props WS* TAG_END
            (inner_nodes+=node)*
@@ -12,10 +20,6 @@ node : (text_pieces+=text_piece)+ # TextNode
 
      | TAG_START tag_props WS* CLOSE TAG_END # SelfClosingElement
      ;
-
-text_piece : TEXT_RAW # TextRaw
-           | TEXT_ESC_START unicode_point ESCAPE_END # TextEscape
-           ;
 
 tag_props : tag_name (WS+ attrs+=tag_attr)*;
 tag_name : NAME;
