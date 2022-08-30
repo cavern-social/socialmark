@@ -3,3 +3,7 @@
 
 # Ignore Gradle build output directory
 /build
+
+# Created by IntelliJ ANTLR plugin even when "generate parser
+automatically" is disabled. Other tools might create it too.
+/src/main/antlr/SMLexer.tokens
