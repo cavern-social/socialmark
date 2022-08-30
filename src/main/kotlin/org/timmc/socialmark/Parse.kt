@@ -60,7 +60,7 @@ data class Document(
     }
 
     companion object {
-        fun from(ctx: SMParser.DocumentContext): Document {
+        internal fun from(ctx: SMParser.DocumentContext): Document {
             return Document(ctx.nodes.map(Node::from))
         }
     }
@@ -76,7 +76,7 @@ sealed interface Node {
     fun format(): String
 
     companion object {
-        fun from(nodeCtx: SMParser.NodeContext): Node {
+        internal fun from(nodeCtx: SMParser.NodeContext): Node {
             return when (nodeCtx) {
                 is TextNodeContext -> TextNode.from(nodeCtx)
                 is PairedElementContext -> PairedEl.from(nodeCtx)
@@ -101,7 +101,7 @@ data class TextNode(
     companion object {
         private val unsafeTextChars = setOf('<', '\\')
 
-        fun from(ctx: TextNodeContext): TextNode {
+        internal fun from(ctx: TextNodeContext): TextNode {
             return TextNode(ctx.text_pieces.joinToString("") { piece ->
                 when (piece) {
                     is TextRawContext -> piece.text
@@ -129,7 +129,7 @@ data class PairedEl(
     }
 
     companion object {
-        fun from(nodeCtx: PairedElementContext): PairedEl {
+        internal fun from(nodeCtx: PairedElementContext): PairedEl {
             val tagName = parseElementName(nodeCtx.tag_props())
             val attrs = Attrs.from(nodeCtx.tag_props())
             val children = nodeCtx.inner_nodes.map(Node::from)
@@ -156,7 +156,7 @@ data class SelfClosingEl(
     }
 
     companion object {
-        fun from(nodeCtx: SelfClosingElementContext): SelfClosingEl {
+        internal fun from(nodeCtx: SelfClosingElementContext): SelfClosingEl {
             val tagName = parseElementName(nodeCtx.tag_props())
             val attrs = Attrs.from(nodeCtx.tag_props())
             return SelfClosingEl(name=tagName, attrs=attrs)
